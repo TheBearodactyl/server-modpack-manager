@@ -5,10 +5,15 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.89"
+crossterm = "0.28.1"
+deelevate = "0.2.0"
 futures-util = "0.3.30"
 indicatif = "0.17.8"
 octocrab = "0.39.0"
 reqwest = "0.12.7"
+rpassword = "7.3.1"
 sha2 = "0.10.8"
 tokio = { version = "1.40.0", features = ["full"] }
+tracing = "0.1.41"
+tracing-subscriber = "0.3.19"
 zip = "2.2.0"

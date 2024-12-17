@@ -1,4 +1,5 @@
 use anyhow::{Context, Result};
+use crossterm::event::{self, Event, KeyCode};
 use indicatif::{ProgressBar, ProgressStyle};
 use octocrab::Octocrab;
 use reqwest;
@@ -43,11 +44,16 @@ async fn main() -> Result<()> {
     print!("Enter your choice (1-3): ");
     io::stdout().flush().context("Failed to flush stdout")?;
 
-    let mut choice = String::new();
-    io::stdin()
-        .read_line(&mut choice)
-        .context("Failed to read user input")?;
-    let choice = choice.trim();
+    let choice = loop {
+        if let Ok(Event::Key(key_event)) = event::read() {
+            match key_event.code {
+                KeyCode::Char('1') => break "1",
+                KeyCode::Char('2') => break "2",
+                KeyCode::Char('3') => break "3",
+                _ => println!("Invalid choice. Please press 1, 2, or 3."),
+            }
+        }
+    };
 
     let artifact_name = match choice {
         "1" => "updated-pack-modrinth.zip",
@@ -67,7 +73,7 @@ async fn main() -> Result<()> {
         let pb = ProgressBar::new(total_size as u64);
         pb.set_style(ProgressStyle::default_bar()
             .template("{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({eta})")
-            .expect("fuck.")
+            .expect("Invalid progress bar template")
             .progress_chars("#>-"));
 
         let mut response = client
@@ -89,14 +95,10 @@ async fn main() -> Result<()> {
 
         let profile_dir = match choice {
             "1" => env::var("APPDATA").context("Failed to get APPDATA")? + r"\ModrinthApp\profiles",
-            "2" => {
-                env::var("HOMEDRIVE").context("Failed to get HOMEDRIVE")?
-                    + &env::var("HOMEPATH").context("Failed to get HOMEPATH")?
-                    + r"\curseforge\minecraft\Instances"
-            }
-            "3" => {
-                env::var("APPDATA").context("Failed to get APPDATA")? + r"\PrismLauncher\instances"
-            }
+            "2" => env::var("HOMEDRIVE").context("Failed to get HOMEDRIVE")?
+                + &env::var("HOMEPATH").context("Failed to get HOMEPATH")?
+                + r"\curseforge\minecraft\Instances",
+            "3" => env::var("APPDATA").context("Failed to get APPDATA")? + r"\PrismLauncher\instances",
             _ => anyhow::bail!("Invalid choice"),
         };
 
@@ -121,4 +123,4 @@ async fn main() -> Result<()> {
     }
 
     Ok(())
-}
+} 
