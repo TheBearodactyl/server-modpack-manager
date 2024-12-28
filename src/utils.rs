@@ -1,9 +1,11 @@
-use anyhow::Context;
-use chrono::{Datelike, Timelike};
+use anyhow::{Context, Error};
+use chrono::Timelike;
 use indicatif::{ProgressBar, ProgressStyle};
+use octocrab::models::repos::Release;
+use octocrab::Octocrab;
 use std::fs;
 use std::path::Path;
-use tracing::debug;
+use tracing::{debug, info};
 
 pub struct ShortTime;
 
@@ -13,10 +15,10 @@ impl tracing_subscriber::fmt::time::FormatTime for ShortTime {
 
         write!(
             w,
-            "{:02}:{:02}:{:02} => ",
-            now.hour(),
-            now.minute(),
-            now.second()
+            "=>"
+            //now.hour(),
+            //now.minute(),
+            //now.second()
         )
     }
 }
@@ -65,10 +67,18 @@ pub fn logging() {
     }
 }
 
-pub fn format_repo_data(repo_user: &str, repo_name: &str) -> String {
-    format!(
-        "User => {}\nRepo => {}\n\nURL => https://github.com/{}/{}.git",
-        repo_user, repo_user, repo_user, repo_name
-    )
-    .to_string()
+pub async fn latest_release(repo_user: &str, repo_name: &str) -> anyhow::Result<Release, Error> {
+    let octocrab = Octocrab::builder()
+        .build()
+        .context("Failed to build Octocrab client")?;
+    let repo = octocrab.repos(repo_user, repo_name);
+
+    let selected_release = repo
+        .releases()
+        .get_latest()
+        .await
+        .context("Failed to fetch latest release from GitHub")?;
+
+    info!("Latest release fetched: {}", selected_release.tag_name);
+    Ok(selected_release)
 }
