@@ -1,6 +1,8 @@
 mod utils;
+mod cli;
 
 use {
+    dotenvy_macro::dotenv,
     anyhow::{Context, Result},
     crossterm::event::{self, Event, KeyCode},
     octocrab::Octocrab,
@@ -19,21 +21,27 @@ use {
 
 #[main]
 async fn main() -> Result<()> {
+    //let argv: Cli = Cli::parse();
+    
     utils::logging();
 
+    let repo_user = dotenv!("REPO_USER");
+    let repo_name = dotenv!("REPO_USER");
+    
     debug!("Starting application...");
 
     let octocrab = Octocrab::builder()
         .build()
         .context("Failed to build Octocrab client")?;
-    let repo = octocrab.repos("thebearodactyl", "originalife-s4");
-    let latest_release = repo
+    let repo = octocrab.repos(repo_user, repo_name);
+    
+    let selected_release = repo
         .releases()
         .get_latest()
         .await
         .context("Failed to fetch latest release from GitHub")?;
 
-    info!("Latest release fetched: {}", latest_release.tag_name);
+    info!("Latest release fetched: {}", selected_release.tag_name);
 
     println!("Which launcher do you use?");
     println!("1. Modrinth");
@@ -58,7 +66,7 @@ async fn main() -> Result<()> {
         _ => "updated-pack-prism.zip",
     };
 
-    if let Some(asset) = latest_release
+    if let Some(asset) = selected_release
         .assets
         .iter()
         .find(|a| a.name == artifact_name)
@@ -93,7 +101,7 @@ async fn main() -> Result<()> {
         let appdata_path = env::var("APPDATA").context("Failed to get APPDATA")?;
         let zip_target_dir = PathBuf::from(&appdata_path)
             .join("Originalife Season 4")
-            .join(latest_release.tag_name.clone());
+            .join(selected_release.tag_name.clone());
 
         if !zip_target_dir.exists() {
             fs::create_dir_all(&zip_target_dir)
@@ -121,7 +129,7 @@ async fn main() -> Result<()> {
 
         let target_dir = PathBuf::from(&profile_dir).join(format!(
             "Originalife Season 4 - {}",
-            latest_release.tag_name
+            selected_release.tag_name
         ));
 
         if target_dir.exists() {
@@ -140,42 +148,38 @@ async fn main() -> Result<()> {
 
         // Spawn a separate task to update the JSON after 10 seconds
         let json_path_clone = target_dir.join("minecraftinstance.json");
-        
+
         if json_path_clone.exists() {
             info!("Removing existing minecraftinstance.json");
             fs::remove_file(&json_path_clone).context("Failed to remove minecraftinstance.json")?;
         }
-        
+
         let json_path_str = json_path_clone.to_str().unwrap().to_string();
-        let latest_release_tag = latest_release.tag_name.clone();
+        let _latest_release_tag = selected_release.tag_name.clone();
         info!("Updating {json_path_str}");
 
-        if json_path_clone.exists() {
-            match utils::update_json_value(
-                json_path_clone
-                    .as_path()
-                    .to_str()
-                    .expect("Couldn't find instance json file"),
-                &["manifest", "name"],
-                format!("Originalife Season 4 - {}", latest_release_tag).as_str(),
-                Some(5u64)
-            ).await {
-                Ok(_) => info!("(1/2) Update of minecraftinstance.json completed"),
-                Err(e) => error!("Failed to update minecraftinstance.json: {}", e),
-            }
+        // Download minecraftinstance.json from the GitHub release
+        if let Some(json_asset) = selected_release
+            .assets
+            .iter()
+            .find(|a| a.name == "minecraftinstance.json")
+        {
+            info!("Found minecraftinstance.json asset");
 
-            match utils::update_json_value(
-                json_path_clone
-                    .as_path()
-                    .to_str()
-                    .expect("Couldn't find instance json file"),
-                &["name"],
-                format!("Originalife Season 4 - {}", latest_release_tag).as_str(),
-                Some(5u64)
-            ).await {
-                Ok(_) => info!("(2/2) Update of minecraftinstance.json completed"),
-                Err(e) => error!("Failed to update minecraftinstance.json: {}", e),
-            }
+            let json_url = Url::from_str(json_asset.browser_download_url.as_str())
+                .context("Invalid URL for minecraftinstance.json")?;
+            let json_content = client
+                .get(json_url)
+                .send()
+                .await
+                .context("Failed to download minecraftinstance.json")?
+                .text()
+                .await
+                .context("Failed to read response for minecraftinstance.json")?;
+
+            // Write the json content to the file
+            fs::write(&json_path_clone, json_content).context("Failed to write minecraftinstance.json")?;
+            info!("(1/2) Download of minecraftinstance.json completed");
         }
 
         if choice == "3" {
@@ -185,7 +189,7 @@ async fn main() -> Result<()> {
                     read_to_string(&instance_cfg_path).context("Failed to read instance.cfg")?;
                 instance_cfg = regex::Regex::new(r"(?m)^name=.*$")?
                     .replace_all(&instance_cfg, |_: &regex::Captures| {
-                        format!("name=Originalife Season 4 - {}", latest_release.tag_name)
+                        format!("name=Originalife Season 4 - {}", selected_release.tag_name)
                     })
                     .to_string();
                 fs::write(instance_cfg_path, instance_cfg)

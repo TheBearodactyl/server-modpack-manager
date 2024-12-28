@@ -1,14 +1,9 @@
-use fs::write;
 use anyhow::Context;
 use chrono::{Datelike, Timelike};
 use indicatif::{ProgressBar, ProgressStyle};
-use serde_json::{from_str, to_string_pretty, Value};
 use std::fs;
-use std::fs::read_to_string;
 use std::path::Path;
-use std::time::Duration;
-use tokio::time::sleep;
-use tracing::{debug, error};
+use tracing::debug;
 
 pub struct ShortTime;
 
@@ -18,13 +13,10 @@ impl tracing_subscriber::fmt::time::FormatTime for ShortTime {
 
         write!(
             w,
-            "{:02}:{:02}:{:02} - {:02}/{:02}/{:02}",
+            "{:02}:{:02}:{:02} => ",
             now.hour(),
             now.minute(),
-            now.second(),
-            now.day(),
-            now.month(),
-            now.year()
+            now.second()
         )
     }
 }
@@ -51,69 +43,8 @@ pub fn progress_bar(total_size: i64) -> ProgressBar {
         .expect("Invalid progress bar template")
         .progress_chars("=> ")
     );
-    
+
     pb
-}
-
-pub async fn update_json_value(
-    file_path: &str,
-    key_path: &[&str],
-    new_value: &str,
-    delay_seconds: Option<u64>,
-) -> anyhow::Result<()> {
-    if let Some(delay) = delay_seconds {
-        sleep(Duration::from_secs(delay)).await;
-    }
-
-    let json_content: String = read_to_string(file_path).context("Failed to read JSON file")?;
-    let mut json: Value = from_str(&json_content).context("Failed to parse JSON")?;
-
-    debug!("Initial JSON structure: {:?}", json);
-
-    let current = &mut json;
-    if let Some(value) = edit_json(key_path, new_value, current) {
-        return value;
-    }
-
-    debug!("Updated JSON structure: {:?}", json);
-    let updated_json = to_string_pretty(&json).context("Failed to serialize JSON")?;
-    write(file_path, updated_json).context("Failed to write updated JSON")?;
-
-    Ok(())
-}
-
-fn edit_json(
-    key_path: &[&str],
-    new_value: &str,
-    mut current: &mut Value,
-) -> Option<anyhow::Result<()>> {
-    for (i, &key) in key_path.iter().enumerate() {
-        debug!("Traversing key: {}", key);
-
-        if i == key_path.len() - 1 {
-            if let Some(obj) = current.as_object_mut() {
-                if obj.contains_key(key) {
-                    debug!("Updating key '{}' with new value: {}", key, new_value);
-                    obj.insert(key.to_string(), Value::String(new_value.to_string()));
-                } else {
-                    error!("Key '{}' not found in the JSON structure", key);
-                    return Some(Err(anyhow::anyhow!("Key not found in the JSON structure")));
-                }
-            }
-        } else {
-            match current.get_mut(key) {
-                Some(next) => {
-                    debug!("Found key '{}', moving deeper", key);
-                    current = next;
-                }
-                None => {
-                    error!("Failed to find nested key '{}'", key);
-                    return Some(Err(anyhow::anyhow!("Failed to find nested key")));
-                }
-            }
-        }
-    }
-    None
 }
 
 pub fn logging() {
@@ -132,4 +63,12 @@ pub fn logging() {
             .with_max_level(tracing::Level::INFO)
             .init();
     }
+}
+
+pub fn format_repo_data(repo_user: &str, repo_name: &str) -> String {
+    format!(
+        "User => {}\nRepo => {}\n\nURL => https://github.com/{}/{}.git",
+        repo_user, repo_user, repo_user, repo_name
+    )
+    .to_string()
 }
