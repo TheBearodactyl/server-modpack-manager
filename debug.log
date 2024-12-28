@@ -1,0 +1,42 @@
+=> DEBUG hyper_rustls::config: with_native_roots processed 38 valid and 0 invalid certs
+=> DEBUG tower::buffer::worker: service.ready=true processing request
+=> DEBUG HTTP{http.method=GET http.url=https://api.github.com/repos/thebearodactyl/server-modpack-manager/releases/latest otel.name="HTTP" otel.kind="client"}: octocrab: requesting
+=> DEBUG HTTP{http.method=GET http.url=https://api.github.com/repos/thebearodactyl/server-modpack-manager/releases/latest otel.name="HTTP" otel.kind="client"}: hyper_util::client::legacy::connect::http: connecting to 140.82.112.5:443
+=> DEBUG HTTP{http.method=GET http.url=https://api.github.com/repos/thebearodactyl/server-modpack-manager/releases/latest otel.name="HTTP" otel.kind="client"}: hyper_util::client::legacy::connect::http: connected to 140.82.112.5:443
+=> DEBUG HTTP{http.method=GET http.url=https://api.github.com/repos/thebearodactyl/server-modpack-manager/releases/latest otel.name="HTTP" otel.kind="client"}: rustls::client::hs: No cached session for DnsName("api.github.com")
+=> DEBUG HTTP{http.method=GET http.url=https://api.github.com/repos/thebearodactyl/server-modpack-manager/releases/latest otel.name="HTTP" otel.kind="client"}: rustls::client::hs: Not resuming any session
+=> DEBUG HTTP{http.method=GET http.url=https://api.github.com/repos/thebearodactyl/server-modpack-manager/releases/latest otel.name="HTTP" otel.kind="client"}: rustls::client::hs: Using ciphersuite TLS13_AES_128_GCM_SHA256
+=> DEBUG HTTP{http.method=GET http.url=https://api.github.com/repos/thebearodactyl/server-modpack-manager/releases/latest otel.name="HTTP" otel.kind="client"}: rustls::client::tls13: Not resuming
+=> DEBUG HTTP{http.method=GET http.url=https://api.github.com/repos/thebearodactyl/server-modpack-manager/releases/latest otel.name="HTTP" otel.kind="client"}: rustls::client::tls13: TLS1.3 encrypted extensions: [ServerNameAck]
+=> DEBUG HTTP{http.method=GET http.url=https://api.github.com/repos/thebearodactyl/server-modpack-manager/releases/latest otel.name="HTTP" otel.kind="client"}: rustls::client::hs: ALPN protocol is None
+=> DEBUG hyper_util::client::legacy::pool: pooling idle connection for ("https", api.github.com)
+=>  INFO server_modpack_manager::utils: Latest release fetched: 1.0.2
+=> DEBUG server_modpack_manager: Starting application...
+=> DEBUG rustls::common_state: Sending warning alert CloseNotify
+=>  INFO server_modpack_manager: Latest release fetched: 1.0.2
+Which launcher do you use?
+1. Modrinth
+2. CurseForge
+3. Prism
+Please press 1, 2, or 3.
+=>  INFO server_modpack_manager: Found asset: updated-pack-modrinth.mrpack
+=> DEBUG reqwest::connect: starting new connection: https://github.com/
+=> DEBUG hyper_util::client::legacy::connect::http: connecting to 140.82.114.4:443
+=> DEBUG hyper_util::client::legacy::connect::http: connected to 140.82.114.4:443
+=> DEBUG hyper_util::client::legacy::pool: pooling idle connection for ("https", github.com)
+=> DEBUG reqwest::async_impl::client: redirecting 'https://github.com/TheBearodactyl/server-modpack-manager/releases/download/1.0.2/updated-pack-modrinth.mrpack' to 'https://objects.githubusercontent.com/github-production-release-asset-2e65be/861385483/0efbb1cf-c1a8-49fe-9f28-7068de681e7a?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=releaseassetproduction%2F20241228%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20241228T015945Z&X-Amz-Expires=300&X-Amz-Signature=d713b2462cc39e99ebacdcae13a073037e3a50bf41530ab622f5d78b1fea6c0a&X-Amz-SignedHeaders=host&response-content-disposition=attachment%3B%20filename%3Dupdated-pack-modrinth.mrpack&response-content-type=application%2Foctet-stream'
+=> DEBUG reqwest::connect: starting new connection: https://objects.githubusercontent.com/
+=> DEBUG hyper_util::client::legacy::connect::http: connecting to 185.199.108.133:443
+=> DEBUG hyper_util::client::legacy::connect::http: connected to 185.199.108.133:443
+  [00:00:01] [===========================================================================================================================================================================] 8.35 MiB/8.35 MiB (0s)=> DEBUG hyper_util::client::legacy::pool: pooling idle connection for ("https", objects.githubusercontent.com)
+=>  INFO initialize_state: theseus::state: Connecting to app database
+=> DEBUG initialize_state: sqlx::query: summary="PRAGMA journal_mode = WAL; …" db.statement="\n\nPRAGMA journal_mode = WAL;\nPRAGMA foreign_keys = ON;\n" rows_affected=0 rows_returned=1 elapsed=646.4µs elapsed_secs=0.0006464
+=> DEBUG initialize_state: sqlx::query: summary="CREATE TABLE IF NOT …" db.statement="\n\nCREATE TABLE IF NOT EXISTS _sqlx_migrations (\n  version BIGINT PRIMARY KEY,\n  description TEXT NOT NULL,\n  installed_on TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  success BOOLEAN NOT NULL,\n  checksum BLOB NOT NULL,\n  execution_time BIGINT NOT NULL\n);\n" rows_affected=0 rows_returned=0 elapsed=33.4µs elapsed_secs=3.34e-5
+=> DEBUG initialize_state: sqlx::query: summary="SELECT version FROM _sqlx_migrations …" db.statement="\n\nSELECT\n  version\nFROM\n  _sqlx_migrations\nWHERE\n  success = false\nORDER BY\n  version\nLIMIT\n  1\n" rows_affected=0 rows_returned=0 elapsed=87.8µs elapsed_secs=8.78e-5
+=> DEBUG initialize_state: sqlx::query: summary="SELECT version, checksum FROM …" db.statement="\n\nSELECT\n  version,\n  checksum\nFROM\n  _sqlx_migrations\nORDER BY\n  version\n" rows_affected=0 rows_returned=4 elapsed=74.7µs elapsed_secs=7.47e-5
+Error: Error while applying migrations: migration 20240711194701 was previously applied but has been modified
+
+Caused by:
+    0: span backtrace:
+
+    1: migration 20240711194701 was previously applied but has been modified

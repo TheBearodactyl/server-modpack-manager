@@ -13,11 +13,8 @@ use {
         str::FromStr,
     },
     theseus::{
-        pack::{
-            install_from::CreatePackLocation,
-            install_mrpack::install_zipped_mrpack
-        },
-        State
+        pack::{install_from::CreatePackLocation, install_mrpack::install_zipped_mrpack},
+        State,
     },
     tracing::{debug, error, info},
     zip::ZipArchive,
@@ -125,18 +122,46 @@ async fn main() -> Result<()> {
         ));
 
         if choice == "1" {
-            State::init().await?;
-            
-            let pack_location = CreatePackLocation::FromFile {
-                path: temp_file.clone(),
-            };
+            match State::init().await {
+                Ok(_) => {
+                    let pack_location = CreatePackLocation::FromFile {
+                        path: temp_file.clone(),
+                    };
 
-            install_zipped_mrpack(
-                pack_location,
-                format!("Originalife Season 4 - {}", selected_release.tag_name),
-            )
-            .await
-            .context("Failed to install mrpack")?;
+                    match install_zipped_mrpack(
+                        pack_location,
+                        format!("Originalife Season 4 - {}", selected_release.tag_name),
+                    )
+                    .await
+                    {
+                        Ok(_) => info!("Modrinth pack installation completed successfully"),
+                        Err(e) => error!("Failed to install mrpack: {}", e),
+                    }
+                }
+                Err(e) => {
+                    error!("Failed to initialize state: {}", e);
+
+                    let appdata_path = env::var("APPDATA").context("Failed to get APPDATA")?;
+                    let db_path = PathBuf::from(&appdata_path)
+                        .join(".modrinth")
+                        .join("theseus.db");
+                    
+                    if db_path.exists() {
+                        fs::remove_file(&db_path).context("Failed to remove corrupted database")?;
+                    }
+                    
+                    State::init().await?;
+                    
+                    let pack_location = CreatePackLocation::FromFile {
+                        path: temp_file.clone(),
+                    };
+                    
+                    install_zipped_mrpack(
+                        pack_location,
+                        format!("Originalife Season 4 - {}", selected_release.tag_name),
+                    ).await.context("Failed to install mrpack after db reset")?;
+                }
+            }
         } else {
             if target_dir.exists() {
                 utils::remove_dir_contents(&target_dir)

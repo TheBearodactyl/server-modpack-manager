@@ -2707,6 +2707,7 @@ dependencies = [
  "crossterm",
  "dotenvy_macro",
  "indicatif",
+ "log",
  "octocrab",
  "regex",
  "reqwest",

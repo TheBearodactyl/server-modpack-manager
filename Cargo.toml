@@ -17,3 +17,4 @@ tracing = "0.1.41"
 tracing-subscriber = "0.3.19"
 zip = "2.2.0"
 theseus = { git = "https://github.com/modrinth/code" }
+log = "0.4.22"

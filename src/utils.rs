@@ -1,5 +1,4 @@
 use anyhow::{Context, Error};
-use chrono::Timelike;
 use indicatif::{ProgressBar, ProgressStyle};
 use octocrab::models::repos::Release;
 use octocrab::Octocrab;
@@ -11,8 +10,6 @@ pub struct ShortTime;
 
 impl tracing_subscriber::fmt::time::FormatTime for ShortTime {
     fn format_time(&self, w: &mut tracing_subscriber::fmt::format::Writer<'_>) -> std::fmt::Result {
-        let now = chrono::Utc::now();
-
         write!(
             w,
             "=>"
